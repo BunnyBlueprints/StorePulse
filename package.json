@@ -6,7 +6,6 @@
     "backend"
   ],
   "scripts": {
-    "build": "npm --workspace frontend run build",
-    "postinstall": "npm --workspace backend run prisma:generate"
+    "build": "node ./backend/node_modules/prisma/build/index.js generate --schema backend/prisma/schema.prisma && npm --workspace frontend run build"
   }
 }
