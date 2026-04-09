@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
 import { Search, MessageSquare } from 'lucide-react';
 

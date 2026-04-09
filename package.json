@@ -1,0 +1,12 @@
+{
+  "name": "storepulse",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "Backend"
+  ],
+  "scripts": {
+    "build": "npm --workspace frontend run build",
+    "postinstall": "npm --workspace Backend run prisma:generate"
+  }
+}
