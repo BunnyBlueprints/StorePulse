@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Rating, Store } from '@prisma/client';
 import { prisma } from '../prisma';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 import { storeSchema } from '../validators';
@@ -26,10 +27,10 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
         const userRatings = await prisma.rating.findMany({
             where: { userId: req.user.id }
         });
-        const ratingMap = new Map();
-        userRatings.forEach(r => ratingMap.set(r.storeId, r.score));
+        const ratingMap = new Map<string, number>();
+        userRatings.forEach((r: Rating) => ratingMap.set(r.storeId, r.score));
         
-        const storesWithUserRating = stores.map(store => ({
+        const storesWithUserRating = stores.map((store: Store) => ({
             ...store,
             myRating: ratingMap.get(store.id) || null
         }));

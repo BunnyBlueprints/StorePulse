@@ -8,8 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/index.js",
     "seed": "tsx seed.ts",
-    "prisma:generate": "node ./node_modules/prisma/build/index.js generate",
-    "db:push": "node ./node_modules/prisma/build/index.js db push"
+    "prisma:generate": "npx --no-install prisma generate",
+    "db:push": "npx --no-install prisma db push"
   },
   "keywords": [],
   "author": "",
