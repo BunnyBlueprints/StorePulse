@@ -3,7 +3,7 @@ services:
     name: storepulse-backend
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run prisma:generate && npm run db:push && npm run build
+    buildCommand: npm install --no-package-lock && npm run prisma:generate && npm run db:push && npm run build
     startCommand: npm run start
     healthCheckPath: /health
     envVars:
