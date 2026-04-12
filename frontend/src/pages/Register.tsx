@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
 import api from '../lib/api';
 import { UserPlus } from 'lucide-react';
 
@@ -25,11 +26,15 @@ const Register = () => {
       const response = await api.post('/auth/signup', formData);
       login(response.data.token, response.data.user);
       navigate('/');
-    } catch (err: any) {
-      if (Array.isArray(err.response?.data?.error)) {
-          setError(err.response.data.error[0].message);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (Array.isArray(error.response?.data?.error)) {
+          setError(error.response.data.error[0].message);
+        } else {
+          setError(error.response?.data?.message || error.response?.data?.error || 'Registration failed');
+        }
       } else {
-          setError(err.response?.data?.message || err.response?.data?.error || 'Registration failed');
+        setError('Registration failed');
       }
     } finally {
       setLoading(false);

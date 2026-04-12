@@ -12,9 +12,9 @@ router.use(authenticate, requireRole(['SYSTEM_ADMIN']));
 router.get('/', async (req, res) => {
   const { name, email, address, role, sortField, sortOrder } = req.query;
   const where: any = {};
-  if (name) where.name = { contains: String(name) };
-  if (email) where.email = { contains: String(email) };
-  if (address) where.address = { contains: String(address) };
+  if (name) where.name = { contains: String(name), mode: 'insensitive' };
+  if (email) where.email = { contains: String(email), mode: 'insensitive' };
+  if (address) where.address = { contains: String(address), mode: 'insensitive' };
   if (role) where.role = String(role);
   
   const orderBy: any = {};
@@ -29,7 +29,12 @@ router.get('/', async (req, res) => {
       where,
       orderBy,
       select: {
-          id: true, name: true, email: true, address: true, role: true, store: { select: { averageRating: true } }
+          id: true,
+          name: true,
+          email: true,
+          address: true,
+          role: true,
+          store: { select: { id: true, name: true, averageRating: true } }
       }
     });
     res.json(users);
@@ -64,6 +69,38 @@ router.get('/dashboard-stats', async (req, res) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: String(req.params.id) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        address: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        store: {
+          select: {
+            id: true,
+            name: true,
+            averageRating: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
 import api from '../lib/api';
 import { LogIn } from 'lucide-react';
 
@@ -22,8 +23,12 @@ const Login = () => {
       const response = await api.post('/auth/login', { email, password });
       login(response.data.token, response.data.user);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to login');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || error.response?.data?.error || 'Failed to login');
+      } else {
+        setError('Failed to login');
+      }
     } finally {
       setLoading(false);
     }

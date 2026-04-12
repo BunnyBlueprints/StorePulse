@@ -1,112 +1,182 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import api from '../lib/api';
-import { Search, MessageSquare } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
+import PasswordUpdateCard from '../components/PasswordUpdateCard';
+
+type SortField = 'name' | 'address' | 'averageRating';
+type SortOrder = 'asc' | 'desc';
+
+interface StoreRow {
+  id: string;
+  name: string;
+  address: string;
+  averageRating: number;
+  myRating: number | null;
+  myRatingId: string | null;
+}
 
 const UserDashboard = () => {
-    const [stores, setStores] = useState<any[]>([]);
-    const [search, setSearch] = useState('');
-    const [ratingStoreId, setRatingStoreId] = useState<string | null>(null);
-    const [ratingScore, setRatingScore] = useState<number>(5);
-    const [isModifying, setIsModifying] = useState(false);
-    const [ratingId] = useState(''); // Kept as-is, though we would need it for modifications
+  const [stores, setStores] = useState<StoreRow[]>([]);
+  const [searchName, setSearchName] = useState('');
+  const [searchAddress, setSearchAddress] = useState('');
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [editingStoreId, setEditingStoreId] = useState<string | null>(null);
+  const [ratingScore, setRatingScore] = useState<number>(5);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-    const fetchStores = useCallback(async () => {
-        try {
-            const res = await api.get(`/stores?name=${search}`);
-            setStores(res.data);
-        } catch (err) {
-            console.error(err);
+  const fetchStores = async () => {
+    const response = await api.get<StoreRow[]>('/stores', {
+      params: {
+        name: searchName || undefined,
+        address: searchAddress || undefined,
+        sortField,
+        sortOrder
+      }
+    });
+    setStores(response.data);
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadStores = async () => {
+      try {
+        const response = await api.get<StoreRow[]>('/stores', {
+          params: {
+            name: searchName || undefined,
+            address: searchAddress || undefined,
+            sortField,
+            sortOrder
+          }
+        });
+
+        if (active) {
+          setStores(response.data);
+          setError('');
         }
-    }, [search]);
-
-    useEffect(() => {
-        fetchStores();
-    }, [fetchStores]);
-
-    const submitRating = async () => {
-        try {
-            if (isModifying) {
-                await api.put(`/ratings/${ratingId}`, { score: ratingScore });
-            } else {
-                await api.post('/ratings', { storeId: ratingStoreId, score: ratingScore });
-            }
-            setRatingStoreId(null);
-            fetchStores(); // Refresh
-        } catch (err) {
-            console.error(err);
+      } catch (error) {
+        if (!active) return;
+        if (axios.isAxiosError(error)) {
+          setError(error.response?.data?.message || error.response?.data?.error || 'Failed to load stores.');
+        } else {
+          setError('Failed to load stores.');
         }
+      }
     };
 
-    return (
-        <div className="animated">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1>Store Directory</h1>
-                <div style={{ position: 'relative' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                    <input 
-                        type="text" 
-                        className="form-input" 
-                        placeholder="Search stores..." 
-                        style={{ paddingLeft: '2.5rem', width: '300px' }}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                    />
-                </div>
-            </div>
+    void loadStores();
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                {stores.map(store => (
-                    <div key={store.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{store.name}</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{store.address}</p>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1c40f' }}>{Number(store.averageRating).toFixed(1)}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall</div>
-                            </div>
-                            <div style={{ height: '30px', width: '1px', background: 'var(--glass-border)' }}></div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: store.myRating ? 'var(--accent-color)' : 'var(--text-secondary)' }}>
-                                    {store.myRating ? store.myRating : '-'}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Your Rating</div>
-                            </div>
-                        </div>
+    return () => {
+      active = false;
+    };
+  }, [searchName, searchAddress, sortField, sortOrder]);
 
-                        {ratingStoreId === store.id ? (
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <input type="number" min="1" max="5" value={ratingScore} onChange={e => setRatingScore(Number(e.target.value))} className="form-input" style={{ width: '80px', padding: '0.5rem' }} />
-                                <button className="btn" style={{ padding: '0.5rem 1rem' }} onClick={submitRating}>Save</button>
-                                <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={() => setRatingStoreId(null)}>Cancel</button>
-                            </div>
-                        ) : (
-                            <button 
-                                className="btn btn-secondary" 
-                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                                onClick={() => {
-                                    setRatingStoreId(store.id);
-                                    if (store.myRating) {
-                                        setIsModifying(true);
-                                        setRatingScore(store.myRating);
-                                        // Need to fetch individual ratings to get the ID for PUT request effectively
-                                        // For simplicity, we assume we fetch it or the backend supports POST overwrite or something.
-                                        // Since the task requires specific rating modifications, we should just let the user set it.
-                                    } else {
-                                        setIsModifying(false);
-                                        setRatingScore(5);
-                                    }
-                                }}
-                            >
-                                <MessageSquare size={16} /> {store.myRating ? 'Modify Rating' : 'Rate Store'}
-                            </button>
-                        )}
-                    </div>
-                ))}
-            </div>
+  const startEditing = (store: StoreRow) => {
+    setEditingStoreId(store.id);
+    setRatingScore(store.myRating ?? 5);
+    setMessage('');
+    setError('');
+  };
+
+  const submitRating = async (store: StoreRow) => {
+    setMessage('');
+    setError('');
+
+    try {
+      if (store.myRatingId) {
+        await api.put(`/ratings/${store.myRatingId}`, { score: ratingScore });
+        setMessage(`Updated rating for ${store.name}.`);
+      } else {
+        await api.post('/ratings', { storeId: store.id, score: ratingScore });
+        setMessage(`Submitted rating for ${store.name}.`);
+      }
+      setEditingStoreId(null);
+      await fetchStores();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || error.response?.data?.error || 'Failed to save rating.');
+      } else {
+        setError('Failed to save rating.');
+      }
+    }
+  };
+
+  const toggleSort = (field: SortField) => {
+    setSortOrder((currentOrder) => (sortField === field && currentOrder === 'asc' ? 'desc' : 'asc'));
+    setSortField(field);
+  };
+
+  return (
+    <div className="animated stack-xl">
+      <div className="section-header">
+        <h1>Store Directory</h1>
+        <div className="search-grid">
+          <div className="search-input">
+            <Search size={18} />
+            <input className="form-input" type="text" placeholder="Search by store name" value={searchName} onChange={(event) => setSearchName(event.target.value)} />
+          </div>
+          <div className="search-input">
+            <Search size={18} />
+            <input className="form-input" type="text" placeholder="Search by address" value={searchAddress} onChange={(event) => setSearchAddress(event.target.value)} />
+          </div>
         </div>
-    );
+      </div>
+
+      {message ? <div className="status-success">{message}</div> : null}
+      {error ? <div className="status-error">{error}</div> : null}
+
+      <div className="glass-card stack-lg">
+        <div className="table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th><button className="sort-button" type="button" onClick={() => toggleSort('name')}><ArrowUpDown size={14} /> Store Name</button></th>
+                <th><button className="sort-button" type="button" onClick={() => toggleSort('address')}><ArrowUpDown size={14} /> Address</button></th>
+                <th><button className="sort-button" type="button" onClick={() => toggleSort('averageRating')}><ArrowUpDown size={14} /> Overall Rating</button></th>
+                <th>Your Rating</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stores.map((store) => (
+                <tr key={store.id}>
+                  <td>{store.name}</td>
+                  <td>{store.address}</td>
+                  <td>{store.averageRating.toFixed(1)}</td>
+                  <td>{store.myRating ?? '-'}</td>
+                  <td>
+                    {editingStoreId === store.id ? (
+                      <div className="inline-editor">
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={ratingScore}
+                          onChange={(event) => setRatingScore(Number(event.target.value))}
+                        />
+                        <button className="btn inline-button" type="button" onClick={() => void submitRating(store)}>Save</button>
+                        <button className="btn btn-secondary inline-button" type="button" onClick={() => setEditingStoreId(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button className="btn btn-secondary inline-button" type="button" onClick={() => startEditing(store)}>
+                        {store.myRatingId ? 'Modify Rating' : 'Rate Store'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <PasswordUpdateCard title="Update Password" />
+    </div>
+  );
 };
 
 export default UserDashboard;

@@ -1,16 +1,18 @@
 import { Router } from 'express';
-import type { Rating, Store } from '@prisma/client';
 import { prisma } from '../prisma';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 import { storeSchema } from '../validators';
 
 const router = Router();
+type UserRatingRecord = Awaited<ReturnType<typeof prisma.rating.findMany>>[number];
+type StoreRecord = Awaited<ReturnType<typeof prisma.store.findMany>>[number];
 
 router.get('/', authenticate, async (req: AuthRequest, res) => {
-  const { name, address, sortField, sortOrder } = req.query;
+  const { name, email, address, sortField, sortOrder } = req.query;
   const where: any = {};
-  if (name) where.name = { contains: String(name) };
-  if (address) where.address = { contains: String(address) };
+  if (name) where.name = { contains: String(name), mode: 'insensitive' };
+  if (email) where.email = { contains: String(email), mode: 'insensitive' };
+  if (address) where.address = { contains: String(address), mode: 'insensitive' };
   
   const orderBy: any = {};
   if (sortField) {
@@ -27,12 +29,13 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
         const userRatings = await prisma.rating.findMany({
             where: { userId: req.user.id }
         });
-        const ratingMap = new Map<string, number>();
-        userRatings.forEach((r: Rating) => ratingMap.set(r.storeId, r.score));
+        const ratingMap = new Map<string, { id: string; score: number }>();
+        userRatings.forEach((rating: UserRatingRecord) => ratingMap.set(rating.storeId, { id: rating.id, score: rating.score }));
         
-        const storesWithUserRating = stores.map((store: Store) => ({
+        const storesWithUserRating = stores.map((store: StoreRecord) => ({
             ...store,
-            myRating: ratingMap.get(store.id) || null
+            myRating: ratingMap.get(store.id)?.score || null,
+            myRatingId: ratingMap.get(store.id)?.id || null
         }));
         return res.json(storesWithUserRating);
     }
