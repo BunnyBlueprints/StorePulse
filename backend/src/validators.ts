@@ -29,5 +29,5 @@ export const storeSchema = z.object({
 
 export const ratingSchema = z.object({
   score: z.number().min(1).max(5),
-  storeId: z.string().uuid(),
+  storeId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid store ID"),
 });

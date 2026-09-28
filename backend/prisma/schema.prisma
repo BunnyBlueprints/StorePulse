@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String   @unique
   password  String
@@ -18,12 +18,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   ratings   Rating[]
-  store     Store?   @relation("StoreOwner", fields: [storeId], references: [id])
-  storeId   String?  @unique
+  stores    Store[]  @relation("StoreOwner")
 }
 
 model Store {
-  id            String   @id @default(uuid())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
   name          String
   email         String   @unique
   address       String
@@ -32,14 +31,15 @@ model Store {
   updatedAt     DateTime @updatedAt
 
   ratings       Rating[]
-  owner         User?    @relation("StoreOwner")
+  ownerId       String?  @db.ObjectId
+  owner         User?    @relation("StoreOwner", fields: [ownerId], references: [id])
 }
 
 model Rating {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   score     Int
-  userId    String
-  storeId   String
+  userId    String   @db.ObjectId
+  storeId   String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

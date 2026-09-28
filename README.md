@@ -11,7 +11,7 @@ StorePulse is a production-grade Store Rating Web Application. The platform supp
 ## Tech Stack
 The project features a separation of concerns, heavily prioritizing modern web architecture:
 
-- **Database:** SQLite (Default via Prisma ORM local database) / PostgreSQL (Optional Docker setup).
+- **Database:** MongoDB Atlas via Prisma ORM.
 - **Backend:** Express.js + Node.js + TypeScript + Zod (Strict server-side validation).
 - **Frontend:** React.js (Vite) + Vanilla CSS (A premium dark-mode presentation styled with glassmorphism and animated interfaces).
 
@@ -31,7 +31,7 @@ The project's database comes pre-seeded with active users to demonstrate the fun
 - **Email:** `owner@example.com`
 - **Password:** `Owner@123`
 
-*(Note: If you encounter an "Invalid Credentials" message on a fresh clone, ensure `npm run seed` was executed in the backend directory.)*
+*(Note: Configure `backend/.env` with your MongoDB Atlas connection string, then run `npm run prisma:generate`, `npm run db:push`, and `npm run seed` from the backend directory.)*
 
 ## Project Structure
 

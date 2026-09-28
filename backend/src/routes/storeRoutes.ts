@@ -58,18 +58,16 @@ router.post('/', authenticate, requireRole(['SYSTEM_ADMIN']), async (req, res) =
     let store;
     if (ownerId) {
         // Find owner and ensure they don't have a store already
-        const owner = await prisma.user.findUnique({ where: { id: ownerId } });
-        if (!owner || owner.role !== 'STORE_OWNER') {
+        const owner = await prisma.user.findUnique({
+            where: { id: ownerId },
+            include: { stores: { select: { id: true } } }
+        });
+        if (!owner || owner.role !== 'STORE_OWNER' || owner.stores.length > 0) {
             return res.status(400).json({ message: 'Invalid owner ID. Must be a STORE_OWNER.' });
         }
         
         store = await prisma.store.create({
-            data: storeData
-        });
-        
-        await prisma.user.update({
-            where: { id: ownerId },
-            data: { storeId: store.id }
+            data: { ...storeData, ownerId }
         });
     } else {
         store = await prisma.store.create({ data: storeData });

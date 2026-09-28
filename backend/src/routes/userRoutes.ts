@@ -34,10 +34,10 @@ router.get('/', async (req, res) => {
           email: true,
           address: true,
           role: true,
-          store: { select: { id: true, name: true, averageRating: true } }
+          stores: { select: { id: true, name: true, averageRating: true }, take: 1 }
       }
     });
-    res.json(users);
+    res.json(users.map(({ stores, ...user }) => ({ ...user, store: stores[0] || null })));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -83,12 +83,13 @@ router.get('/:id', async (req, res) => {
         role: true,
         createdAt: true,
         updatedAt: true,
-        store: {
+        stores: {
           select: {
             id: true,
             name: true,
             averageRating: true
-          }
+          },
+          take: 1
         }
       }
     });
@@ -97,7 +98,8 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(user);
+    const { stores, ...userDetails } = user;
+    res.json({ ...userDetails, store: stores[0] || null });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from './contexts/useAuth';
 import { LogOut, Store as StoreIcon } from 'lucide-react';
 import Login from './pages/Login';
@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
+import Home from './pages/Home';
 
 const App = () => {
   const { user, logout, loading } = useAuth();
@@ -28,8 +29,8 @@ const App = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <a href="/login" className="btn btn-secondary">Login</a>
-              <a href="/register" className="btn">Register</a>
+              <Link to="/login" className="btn btn-secondary">Login</Link>
+              <Link to="/register" className="btn">Register</Link>
             </div>
           )}
         </div>
@@ -42,7 +43,7 @@ const App = () => {
           
           {/* Conditional dashboards based on role */}
           <Route path="/" element={
-            !user ? <Navigate to="/login" /> :
+            !user ? <Home /> :
             user.role === 'SYSTEM_ADMIN' ? <AdminDashboard /> :
             user.role === 'STORE_OWNER' ? <OwnerDashboard /> :
             <UserDashboard />

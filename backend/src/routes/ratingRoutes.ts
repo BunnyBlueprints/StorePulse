@@ -70,13 +70,13 @@ router.put('/:id', authenticate, requireRole(['NORMAL_USER']), async (req: AuthR
 router.get('/store/my', authenticate, requireRole(['STORE_OWNER']), async (req: AuthRequest, res) => {
     try {
         // Find the store associated with this store owner
-        const user = await prisma.user.findUnique({ where: { id: req.user!.id }});
-        if (!user || !user.storeId) {
+        const store = await prisma.store.findFirst({ where: { ownerId: req.user!.id } });
+        if (!store) {
             return res.status(404).json({ message: 'You do not have a store assigned' });
         }
 
         const ratings = await prisma.rating.findMany({
-            where: { storeId: user.storeId },
+            where: { storeId: store.id },
             include: { user: { select: { name: true, email: true } } },
             orderBy: { createdAt: 'desc' }
         });
